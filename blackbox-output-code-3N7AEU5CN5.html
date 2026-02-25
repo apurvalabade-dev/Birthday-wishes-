@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Birthday Experience</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ==================== AUDIO CONTROLS ==================== */
+     
+
+        /* ==================== SCREEN CONTAINER ==================== */
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.8s ease;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* ==================== SCREEN 1: PASSWORD LOCK ==================== */
+        #screen-lock {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+        }
+
+        .lock-container {
+            text-align: center;
+            animation: fadeIn 1s ease;
+        }
+
+        .lock-title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #ff6b6b);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+        }
+
+        .lock-subtitle {
+            color: #888;
+            font-size: 1rem;
+            margin-bottom: 40px;
+        }
+
+        .password-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        #password-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            color: white;
+            border-radius: 50px;
+            width: 300px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #password-input:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .unlock-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .unlock-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .unlock-btn:hover::before {
+            left: 100%;
+        }
+
+        .unlock-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .wrong-message {
+            color: #ff6b6b;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .wrong-message.show {
+            opacity: 1;
+        }
+
+        .glowing-orb {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 107, 107, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* ==================== SCREEN 2: PHOTO COLLAGE ==================== */
+        #screen-collage {
+            background: #0a0a0a;
+        }
+
+        .collage-container {
+            position: relative;
+            width: 90%;
+            max-width: 1000px;
+            height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .photo-frame {
+            position: absolute;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.5) rotate(var(--rotation));
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .photo-frame.show {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+
+        .photo-frame:nth-child(1) { width: 200px; height: 250px; top: 10%; left: 10%; --rotation: -8deg; }
+        .photo-frame:nth-child(2) { width: 220px; height: 280px; top: 5%; right: 15%; --rotation: 10deg; }
+        .photo-frame:nth-child(3) { width: 180px; height: 220px; bottom: 15%; left: 20%; --rotation: 5deg; }
+        .photo-frame:nth-child(4) { width: 240px; height: 300px; bottom: 10%; right: 10%; --rotation: -12deg; }
+        .photo-frame:nth-child(5) { width: 200px; height: 250px; top: 30%; right: 25%; --rotation: 8deg; }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            background: linear-gradient(135deg, #1a1a2e, #2d2d44);
+        }
+
+        .heart-float {
+            position: absolute;
+            font-size: 20px;
+            animation: floatHeart 4s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .heart-float.active {
+            opacity: 0.6;
+        }
+
+        @keyframes floatHeart {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
+        }
+
+        /* ==================== SCREEN 3: BIRTHDAY DASHBOARD ==================== */
+        #screen-dashboard {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+        }
+
+        .dashboard-container {
+            text-align: center;
+            animation: slideUp 1s ease;
+        }
+
+        .birthday-title {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #feca57, #ff6b6b, #feca57);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+        }
+
+        .version-title {
+            color: #888;
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+        }
+
+        .checklist-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            margin: 0 auto 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.5s ease;
+        }
+
+        .checklist-item.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 20px;
+            font-size: 1.2rem;
+            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .check-text {
+            font-size: 1.1rem;
+            text-align: left;
+        }
+
+        .continue-btn {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.2rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .continue-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.4);
+        }
+
+        /* ==================== SCREEN 4: HIDDEN EASTER EGG ==================== */
+        #screen-easter-egg {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+        }
+
+        .easter-container {
+            text-align: center;
+        }
+
+        .easter-message {
+            font-size: 1.5rem;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .hidden-heart {
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        .hidden-heart:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        .hidden-heart.clicked {
+            opacity: 1;
+            animation: heartBurst 0.5s ease;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes heartBurst {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .easter-hint {
+            margin-top: 30px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        /* ==================== SCREEN 5: QUIZ ==================== */
+        #screen-quiz {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+        }
+
+        .quiz-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        .quiz-progress {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: #ff6b6b;
+            transform: scale(1.3);
+        }
+
+        .progress-dot.completed {
+            background: #4ecdc4;
+        }
+
+        .quiz-question {
+            font-size: 1.8rem;
+            margin-bottom: 40px;
+            line-height: 1.4;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .quiz-option:hover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            transform: translateX(10px);
+        }
+
+        .quiz-option.correct {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.2);
+        }
+
+        .quiz-option.wrong {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+            animation: shake 0.5s ease;
+        }
+
+        .quiz-feedback {
+            margin-top: 20px;
+            font-size: 1rem;
+            min-height: 30px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .quiz-feedback.show {
+            opacity: 1;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* ==================== SCREEN 6: PROPOSAL JOKE ==================== */
+        #screen-proposal {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+        }
+
+        .proposal-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        .proposal-title {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #feca57;
+        }
+
+        .proposal-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 2px solid rgba(254, 202, 87, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .proposal-header {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4ecdc4;
+        }
+
+        .proposal-requirements {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .requirement.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .req-icon {
+            margin-right: 15px;
+            font-size: 1.3rem;
+        }
+
+        .trial-period {
+            font-size: 1.3rem;
+            color: #feca57;
+            margin-bottom: 30px;
+        }
+
+        .accept-btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.2rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .accept-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(78, 205, 196, 0.4);
+        }
+
+        /* ==================== SCREEN 7: HANDWRITTEN LETTER ==================== */
+        #screen-letter {
+            background: #1a1a1a;
+            align-item:center;
+            flex-direction:column;
+            justify-content:flex-start;
+            min-height:100vh;
+            padding:40px;
+        }
+
+        .letter-container {
+            position: relative;
+            max-width: 770px;
+            padding: 60px;
+            background: #f5f0e6;
+            border-radius: 5px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 1s ease;
+        }
+
+        .letter-container.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .letter-paper {
+            position: relative;
+            color: #2c2c2c;
+            font-family: 'Great Vibes', cursive;
+            line-height: 1.4;
+            
+        }
+
+        .letter-text {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            min-height: 400px;
+        }
+
+        .letter-text p {
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .letter-text p.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .letter-signature {
+            text-align: right;
+            font-style: italic;
+            margin-top: 40px;
+            opacity: 0;
+            transition: opacity 1s ease 1s;
+        }
+
+        .letter-signature.show {
+            opacity: 1;
+        }
+
+        .close-letter-btn {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        .letter-container.show .close-letter-btn {
+            opacity: 1;
+        }
+
+        .close-letter-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .rose-petals {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .petal {
+            position: absolute;
+            font-size: 20px;
+            animation: fall 6s linear infinite;
+            opacity: 0;
+        }
+
+        .petal.active {
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* ==================== SCREEN 8: FINAL CELEBRATION ==================== */
+        #screen-final {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+        }
+
+        .final-container {
+            text-align: center;
+        }
+
+        .final-message {
+            font-size: 3rem;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #ff6b6b);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+            margin-bottom: 50px;
+        }
+
+        .floating-lights {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .light {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 107, 107, 0.8), transparent);
+            animation: floatLight 8s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .light.active {
+            opacity: 1;
+        }
+
+        @keyframes floatLight {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        .restart-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 15px 40px;
+            font-size: 1rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 50px;
+        }
+
+        .restart-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ==================== CONFETTI ==================== */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confettiFall 4s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* ==================== ANIMATIONS ==================== */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            to { transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        @keyframes shimmer {
+            to { background-position: 200% center; }
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 768px) {
+            .lock-title, .birthday-title, .final-message {
+                font-size: 2rem;
+            }
+            
+            .photo-frame {
+                display: none;
+            }
+            
+            .checklist-container {
+                padding: 20px;
+            }
+            
+            .letter-container {
+                padding: 30px;
+                margin: 20px;
+            }
+            
+            .letter-text {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Audio Controls -->
+   
+
+    <!-- Confetti Container -->
+    <div class="confetti-container" id="confetti-container"></div>
+
+    <!-- ==================== SCREEN 1: PASSWORD LOCK ==================== -->
+    <div class="screen active" id="screen-lock">
+        <div class="glowing-orb"></div>
+        <div class="lock-container">
+            <h1 class="lock-title">🔐 Private Birthday Experience</h1>
+            <p class="lock-subtitle">Enter the secret password</p>
+            
+            <div class="password-container">
+                <input type="password" id="password-input" placeholder="Enter password...">
+            </div>
+            
+            <button class="unlock-btn" id="unlock-btn">Unlock Experience</button>
+            
+            <p class="wrong-message" id="wrong-message">Wrong password! Think harder 😌</p>
+        </div>
+    </div>
+
+    <!-- ==================== SCREEN 2: PHOTO COLLAGE ==================== -->
+    <div class="screen" id="screen-collage">
+        <div class="collage-container" id="collage-container">
+            <!-- Photo frames will be added dynamically -->
+            <div class="photo-frame">
+                <img src="pic1.jpg" style="width:100%; height:100% ;object-fit:cover; display:block;">
+            </div>
+            <div class="photo-frame">  <img src="pic2.jpg" style="width:100%; height:100% ;object-fit:cover; display:block;">
+            </div>
+            <div class="photo-frame">  <img src="pic3.jpg" style="width:100%; height:100% ;object-fit:cover; display:block;">
+            </div>
+            <div class="photo-frame">  <img src="pic4.jpg" style="width:100%; height:100% ;object-fit:cover; display:block;">
+            </div>
+            <div class="photo-frame">  <img src="pic5.jpg" style="width:100%; height:100% ;object-fit:cover; display:block;">
+            </div>
+        </div>
+        <!-- Floating hearts -->
+        <div class="heart-float" style="top: 20%; left: 10%;">💖</div>
+        <div class="heart-float" style="top: 30%; right: 15%;">💕</div>
+        <div class="heart-float" style="top: 60%; left: 20%;">💗</div>
+        <div class="heart-float" style="top: 50%; right: 10%;">💝</div>
+        <div class="heart-float" style="top: 70%; left: 50%;">💘</div>
+    </div>
+
+    <!-- ==================== SCREEN 3: BIRTHDAY DASHBOARD ==================== -->
+    <div class="screen" id="screen-dashboard">
+        <div class="dashboard-container">
+            <h1 class="birthday-title">🎂 Happy Birthday, Jaydya! 🎂</h1>
+            <p class="version-title">Version Update 2026 Requirements</p>
+            
+            <div class="checklist-container">
+                <div class="checklist-item" data-delay="0">
+                    <div class="check-icon">💪</div>
+                    <span class="check-text">Gym Mode Activated</span>
+                </div>
+                <div class="checklist-item" data-delay="200">
+                    <div class="check-icon">📈</div>
+                    <span class="check-text">Career Focus Installed</span>
+                </div>
+                <div class="checklist-item" data-delay="400">
+                    <div class="check-icon">✨</div>
+                    <span class="check-text">Skin Care Consistency</span>
+                </div>
+                <div class="checklist-item" data-delay="600">
+                    <div class="check-icon">🧠</div>
+                    <span class="check-text">Emotional Maturity Patch</span>
+                </div>
+                 <div class="checklist-item" data-delay="800">
+                    <div class="check-icon">🌞🛌</div>
+                    <span class="check-text">Wake up early and go on bed before 12</span>
+                </div>
+                <div class="checklist-item" data-delay="800">
+                    <div class="check-icon">🤝</div>
+                    <span class="check-text">Respect Everyone (every girls)Feature</span>
+                </div>
+                <div class="checklist-item" data-delay="1000">
+                    <div class="check-icon">😌</div>
+                    <span class="check-text">Less Naughty Behavior</span>
+                </div>
+            </div>
+            
+            <button class="continue-btn" id="dashboard-continue">Continue Upgrade →</button>
+        </div>
+    </div>
+
+    <!-- ==================== SCREEN 4: HIDDEN EASTER EGG ==================== -->
+    <div class="screen" id="screen-easter-egg">
+        <div class="easter-container">
+            <p class="easter-message">Something special awaits those who pay attention...</p>
+            <div class="hidden-heart" id="hidden-heart">💖</div>
+            <div class="heart-float" style="top: 20%; left: 10%;">💖</div>
+        <div class="heart-float" style="top: 30%; right: 15%;">💕</div>
+        <div class="heart-float" style="top: 60%; left: 20%;">💗</div>
+        <div class="heart-float" style="top: 50%; right: 10%;">💝</div>
+        <div class="heart-float" style="top: 70%; left: 50%;">💘</div>
+            <p class="easter-hint">Can you find the hidden heart?</p>
+        </div>
+    </div>
+
+    <!-- ==================== SCREEN 5: QUIZ ==================== -->
+    <div class="screen" id="screen-quiz">
+        <div class="quiz-container">
+            <div class="quiz-progress">
+                <div class="progress-dot" id="progress-1"></div>
+                <div class="progress-dot" id="progress-2"></div>
+                <div class="progress-dot" id="progress-3"></div>
+            </div>
+            
+            <div id="quiz-content">
+                <h2 class="quiz-question" id="quiz-question">Loading question...</h2>
+                <div class="quiz-options" id="quiz-options"></div>
+                <p class="quiz-feedback" id="quiz-feedback"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SCREEN 6: PROPOSAL JOKE ==================== -->
+    <div class="screen" id="screen-proposal">
+        <div class="proposal-container">
+            <h1 class="proposal-title">🔮 Future Simulation Activated</h1>
+            
+            <div class="proposal-box">
+                <h2 class="proposal-header">✨ You have unlocked: Potential Better Beta Version of Yourself ✨</h2>
+                
+                <div class="proposal-requirements">
+                    <div class="requirement" data-delay="0">
+                        <span class="req-icon">🏋️</span>
+                        <span>Gym consistency</span>
+                    </div>
+                    <div class="requirement" data-delay="200">
+                        <span class="req-icon">🎯</span>
+                        <span>Career discipline</span>
+                    </div>
+                    <div class="requirement" data-delay="400">
+                        <span class="req-icon">🧘</span>
+                        <span>No ego during fights</span>
+                    </div>
+                      <div class="requirement" data-delay="400">
+                        <span class="req-icon">?</span>
+                        <span>Get up early in the morning and sleep before 12</span>
+                    </div>
+                    <div class="requirement" data-delay="600">
+                        <span class="req-icon">💬</span>
+                        <span>Communication after arguments</span>
+                    </div>
+                </div>
+                
+                <p class="trial-period">Trial period: 365 days 😌</p>
+                
+                <button class="accept-btn" id="accept-btn">Accept Terms</button><br><br>
+                <span>accept if truely wanna do this</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SCREEN 7: HANDWRITTEN LETTER ==================== -->
+    <div class="screen" id="screen-letter">
+        <div class="rose-petals" id="rose-petals"></div>
+        <div class="letter-container" id="letter-container">
+            <button class="close-letter-btn" id="close-letter">×</button>
+            <div class="letter-paper">
+                <div class="letter-text" id="letter-text">
+                    <!-- Letter content will be added dynamically -->
+                </div>
+                <div class="letter-signature" id="letter-signature">
+                    With all my love (and just a little pressure 😘),<br>
+                    — by Apu 💕
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SCREEN 8: FINAL CELEBRATION ==================== -->
+    <div class="screen" id="screen-final">
+        <div class="floating-lights" id="floating-lights"></div>
+        <div class="final-container">
+            <h1 class="final-message">❤️ Happy Birthday Again, Jaydya! ❤️</h1>
+            <button class="restart-btn" id="restart-btn">🔄 Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== AUDIO SYSTEM ====================
+    
+
+       
+        // ==================== CONFETTI SYSTEM ====================
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            const colors = ['#ff6b6b', '#feca57', '#4ecdc4', '#ff9ff3', '#54a0ff', '#5f27cd'];
+            
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 3) + 's';
+                container.appendChild(confetti);
+                
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        // ==================== SCREEN NAVIGATION ====================
+        let currentScreen = 1;
+        const totalScreens = 8;
+
+        function showScreen(screenNum) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${getScreenName(screenNum)}`).classList.add('active');
+            currentScreen = screenNum;
+            
+            // Trigger screen-specific animations
+            switch(screenNum) {
+                case 2: animateCollage(); break;
+                case 3: animateChecklist(); break;
+                case 6: animateProposal(); break;
+                case 7: animateLetter(); break;
+                case 8: animateFinal(); break;
+            }
+        }
+
+        function getScreenName(num) {
+            const names = ['', 'lock', 'collage', 'dashboard', 'easter-egg', 'quiz', 'proposal', 'letter', 'final'];
+            return names[num];
+        }
+
+        // ==================== SCREEN 1: PASSWORD LOCK ====================
+        const correctPassword = '0224'; // Change this to your desired password
+        let wrongAttempts = 0;
+
+        document.getElementById('unlock-btn').addEventListener('click', function() {
+            const input = document.getElementById('password-input').value.toLowerCase().trim();
+            const wrongMsg = document.getElementById('wrong-message');
+            
+            if (input === correctPassword) {
+                //playSound('unlock');
+                createConfetti();
+                wrongMsg.classList.remove('show');
+                
+                setTimeout(() => {
+                    showScreen(2);
+                }, 1000);
+            } else {
+                wrongAttempts++;
+               // playSound('wrong');
+                wrongMsg.classList.add('show');
+                
+                const messages = [
+                    "Wrong password! Think harder 😌",
+                    "Nope! Try again, birthday boy 🤔",
+                    "Still wrong! It should be today's day easy na 😜",
+                    "Seriously? You forgot the password? 😅"
+                ];
+                wrongMsg.textContent = messages[Math.min(wrongAttempts - 1, messages.length - 1)];
+                
+                document.getElementById('password-input').value = '';
+            }
+        });
+
+        document.getElementById('password-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('unlock-btn').click();
+            }
+        });
+
+        // ==================== SCREEN 2: PHOTO COLLAGE ====================
+        function animateCollage() {
+            const frames = document.querySelectorAll('.photo-frame');
+            const hearts = document.querySelectorAll('.heart-float');
+            
+            frames.forEach((frame, index) => {
+                setTimeout(() => {
+                    frame.classList.add('show');
+                }, index * 300);
+            });
+            
+            setTimeout(() => {
+                hearts.forEach(heart => heart.classList.add('active'));
+            }, 2000);
+            
+            // Auto transition after 10 seconds
+            setTimeout(() => {
+                showScreen(3);
+            }, 10000);
+        }
+
+        // ==================== SCREEN 3: BIRTHDAY DASHBOARD ====================
+        function animateChecklist() {
+            const items = document.querySelectorAll('.checklist-item');
+            items.forEach(item => {
+                setTimeout(() => {
+                    item.classList.add('show');
+                }, parseInt(item.dataset.delay));
+            });
+        }
+
+        document.getElementById('dashboard-continue').addEventListener('click', function() {
+            createConfetti();
+            showScreen(4);
+        });
+
+        // ==================== SCREEN 4: EASTER EGG ====================
+        let heartClicked = false;
+
+        document.getElementById('hidden-heart').addEventListener('click', function() {
+            if (heartClicked) return;
+            heartClicked = true;
+            
+            this.classList.add('clicked');
+          //  playSound('heart');
+            createConfetti();
+            
+            setTimeout(() => {
+                showScreen(5);
+                startQuiz();
+            }, 800);
+        });
+
+        // ==================== SCREEN 5: QUIZ ====================
+        const quizQuestions = [
+            {
+                question: "Who is always right in arguments?",
+                options: ["Jaydya", "Apu", "Both", "Neither"],
+                correct: 1 // Apu
+            },
+            {
+                question: "Who has the power to make you smile in 0.5 seconds?",
+                options: ["Your mom", "Your friends", "Apu", "Money"],
+                correct: 2 // Apu
+            },
+            {
+                question: "What's the password to your happiness?",
+                options: ["Money", "Success", "Apu", "Gym"],
+                correct: 2 // Apu
+            },
+            {
+                question: "Who's the CEO of your life now?",
+                options: ["You", "Your parents", "Apu", "Your boss"],
+                correct: 1// Apu
+            },
+            {
+                question: "Who is your favorite notification on your phone?",
+                options: ["News alerts", "Apu's message", "Work emails", "Social media"],
+                correct: 1 // Apu's message
+            },
+            {
+                question: "Who knows all your secrets but still loves you?",
+                options: ["Your best friend", "Your mom", "Apu", "No one"],
+                correct: 2 // Apu
+            }
+        ];
+
+        let currentQuestion = 0;
+        let shuffledQuestions = [];
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function startQuiz() {
+            shuffledQuestions = shuffleArray(quizQuestions).slice(0, 3);
+            currentQuestion = 0;
+            showQuestion();
+            updateProgress();
+        }
+
+        function showQuestion() {
+            const q = shuffledQuestions[currentQuestion];
+            document.getElementById('quiz-question').textContent = q.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((option, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'quiz-option';
+                btn.textContent = option;
+                btn.addEventListener('click', () => checkAnswer(index));
+                optionsContainer.appendChild(btn);
+            });
+            
+            document.getElementById('quiz-feedback').classList.remove('show');
+        }
+
+        function checkAnswer(selectedIndex) {
+            const q = shuffledQuestions[currentQuestion];
+            const options = document.querySelectorAll('.quiz-option');
+            const feedback = document.getElementById('quiz-feedback');
+            
+            options.forEach(opt => opt.style.pointerEvents = 'none');
+            
+            if (selectedIndex === q.correct) {
+                options[selectedIndex].classList.add('correct');
+                //playSound('correct');
+                feedback.textContent = 'Correct! ✨';
+                feedback.style.color = '#4ecdc4';
+                
+                setTimeout(() => {
+                    currentQuestion++;
+                    updateProgress();
+                    
+                    if (currentQuestion < shuffledQuestions.length) {
+                        showQuestion();
+                    } else {
+                        // Quiz completed
+                        feedback.textContent = 'All correct! You know me well! 💕';
+                        setTimeout(() => {
+                            createConfetti();
+                            showScreen(6);
+                        }, 1500);
+                    }
+                }, 1000);
+            } else {
+                options[selectedIndex].classList.add('wrong');
+               // playSound('wrong');
+                feedback.textContent = 'Think carefully 😌';
+                feedback.style.color = '#ff6b6b';
+                
+                setTimeout(() => {
+                    options.forEach(opt => {
+                        opt.classList.remove('wrong');
+                        opt.style.pointerEvents = 'auto';
+                    });
+                    feedback.classList.remove('show');
+                }, 1500);
+            }
+            
+            feedback.classList.add('show');
+        }
+
+        function updateProgress() {
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById(`progress-${i}`);
+                dot.classList.remove('active', 'completed');
+                if (i <= currentQuestion) {
+                    dot.classList.add('completed');
+                } else if (i === currentQuestion + 1) {
+                    dot.classList.add('active');
+                }
+            }
+        }
+
+        // ==================== SCREEN 6: PROPOSAL JOKE ====================
+        function animateProposal() {
+            const requirements = document.querySelectorAll('.requirement');
+            requirements.forEach(req => {
+                setTimeout(() => {
+                    req.classList.add('show');
+                }, parseInt(req.dataset.delay));
+            });
+        }
+
+        document.getElementById('accept-btn').addEventListener('click', function() {
+            createConfetti();
+            showScreen(7);
+            animateLetter();
+        });
+
+        // ==================== SCREEN 7: HANDWRITTEN LETTER ====================
+        const letterContent = `Dear Jaydya,
+
+Happy Birthday! 🎈
+
+I spent a long time trying to think of the perfect gift for you this year. I looked everywhere… and then I remembered—you already have me in your life. So, honestly? You're welcome! 😜😏✨ A gift that keeps on giving (side effects may include my constant commentary).
+
+In all seriousness, I wanted to write this because I believe in you more than I usually say out loud. This year, I don't just wish you happiness—anyone can wish you that. I wish you growth 🌱, consistency 🔄, and emotional maturity 💎.
+
+I want you to set massive new goals this year and level up in every way—and yes, that includes hitting the gym and building the body I've talked about. 🏋️‍♂️💪 I want you to feel strong, disciplined, and confident—not for the world, not even for me, but so that when you look in the mirror, you see the absolute best version of yourself staring back. ⚡️
+
+Yes, we fight. Yes, you're stubborn. And yes, you overthink everything until your brain probably hurts. 🧠💫 But I know your heart—and that's why I'm still here, right by your side. ❤️
+
+Become the man you talk about becoming. Build that strength 💪, stay focused 🎯, and keep your heart gold 💛. No matter how much I tease you or push you, know that I care more than I show. If you put in the work to become that man, I promise I will always be your biggest supporter 📣.
+
+I wish you a year of incredible success 🏆, peak health 🏃‍♂️💥, and a life that feels as amazing as you imagine it can be. Celebrate today—you're a year older 🎂, hopefully a tiny bit wiser 🧩, and definitely lucky to have me. 😉
+
+Happy Birthday! 🎉🔥
+    With all my love (and just a little pressure 😘).
+                    — by Apu 💕`;
+
+        function animateLetter() {
+            
+            // Create rose petals
+            const petalsContainer = document.getElementById('rose-petals');
+            const petalEmojis = ['🌹', '🌸', '💮', '🏵️'];
+            
+            for (let i = 0; i < 30; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.textContent = petalEmojis[Math.floor(Math.random() * petalEmojis.length)];
+                petal.style.left = Math.random() * 100 + '%';
+                petal.style.animationDelay = Math.random() * 5 + 's';
+                petal.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                petalsContainer.appendChild(petal);
+                
+                setTimeout(() => petal.classList.add('active'), 100);
+            }
+            
+            // Show letter container
+            const letterContainer = document.getElementById('letter-container');
+            setTimeout(() => {
+                letterContainer.classList.add('show');
+                
+                // Type out letter content
+                const letterText = document.getElementById('letter-text');
+                const paragraphs = letterContent.split('\n\n');
+                
+                paragraphs.forEach((para, index) => {
+                    const p = document.createElement('p');
+                    p.innerHTML = para.replace(/\n/g, '<br>');
+                    letterText.appendChild(p);
+                    
+                    setTimeout(() => {
+                        p.classList.add('show');
+                    }, index * 800);
+                });
+                
+                // Show signature
+                setTimeout(() => {
+                    document.getElementById('letter-signature').classList.add('show');
+                }, paragraphs.length * 800 + 500);
+                
+            }, 500);
+        }
+
+        document.getElementById('close-letter').addEventListener('click', function() {
+            createConfetti();
+            showScreen(8);
+        });
+
+        // ==================== SCREEN 8: FINAL CELEBRATION ====================
+        function animateFinal() {
+            const lightsContainer = document.getElementById('floating-lights');
+            
+            for (let i = 0; i < 20; i++) {
+                const light = document.createElement('div');
+                light.className = 'light';
+                light.style.left = Math.random() * 100 + '%';
+                light.style.animationDelay = Math.random() * 5 + 's';
+                light.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                lightsContainer.appendChild(light);
+                
+                setTimeout(() => light.classList.add('active'), 100);
+            }
+        }
+
+        document.getElementById('restart-btn').addEventListener('click', function() {
+            // Reset everything
+            currentScreen = 1;
+            heartClicked = false;
+            wrongAttempts = 0;
+            
+            // Reset all screens
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-lock').classList.add('active');
+            
+            // Reset elements
+            document.getElementById('password-input').value = '';
+            document.querySelectorAll('.photo-frame').forEach(f => f.classList.remove('show'));
+            document.querySelectorAll('.heart-float').forEach(h => h.classList.remove('active'));
+            document.querySelectorAll('.checklist-item').forEach(i => i.classList.remove('show'));
+            document.querySelectorAll('.requirement').forEach(r => r.classList.remove('show'));
+            document.getElementById('letter-container').classList.remove('show');
+            document.getElementById('letter-text').innerHTML = '';
+            document.getElementById('letter-signature').classList.remove('show');
+            document.querySelectorAll('.petal').forEach(p => p.remove());
+            document.querySelectorAll('.light').forEach(l => l.remove());
+            
+            // Clear confetti
+            document.getElementById('confetti-container').innerHTML = '';
+        });
+
+        // ==================== KEYBOARD NAVIGATION (Optional) ====================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                // Skip to next screen (for testing)
+                if (currentScreen < totalScreens) {
+                    showScreen(currentScreen + 1);
+                }
+            }
+            if (e.key === 'ArrowLeft') {
+                // Go to previous screen
+                if (currentScreen > 1) {
+                    showScreen(currentScreen - 1);
+                }
+            }
+        });
+
+        // Initialize
+        console.log('🎂 Birthday Experience Loaded!');
+        console.log('Tip: Press Arrow Right or Space to skip through screens');
+    </script>
+</body>
+</html>
